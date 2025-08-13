@@ -1,0 +1,59 @@
+{
+	"name": "n8n-nodes-appstruct",
+	"version": "1.0.0",
+	"description": "n8n community node for AppStruct - no-code backend platform integration",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"appstruct",
+		"backend",
+		"database",
+		"api",
+		"no-code"
+	],
+	"license": "MIT",
+	"homepage": "https://appstruct.cloud",
+	"author": {
+		"name": "AppStruct",
+		"email": "support@appstruct.cloud"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/AppStructAI/n8n-nodes-appstruct.git"
+	},
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc && gulp build:icons",
+		"dev": "tsc --watch",
+		"format": "prettier nodes --write",
+		"lint": "eslint nodes --ignore-pattern '**/AppStructTrigger.node.ts'",
+		"lintfix": "eslint nodes --fix --ignore-pattern '**/AppStructTrigger.node.ts'",
+		"test:build": "node scripts/test-build.js",
+		"test:quick": "./scripts/quick-test.sh",
+		"prepublishOnly": "npm run build && npm run lint -s"
+	},
+	"files": [
+		"dist"
+	],
+	  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/AppStructApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/AppStruct/AppStruct.node.js"
+    ]
+  },
+	"devDependencies": {
+		"@typescript-eslint/parser": "^5.45.0",
+		"eslint": "^8.57.1",
+		"eslint-plugin-n8n-nodes-base": "^1.11.0",
+		"gulp": "^4.0.2",
+		"n8n-workflow": "*",
+		"prettier": "^2.7.1",
+		"typescript": "^4.8.4"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}

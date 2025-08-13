@@ -1,0 +1,275 @@
+{
+  "name": "AppStruct - Test All Operations",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [120, 300]
+    },
+    {
+      "parameters": {
+        "resource": "project",
+        "operation": "getMany"
+      },
+      "id": "get-projects",
+      "name": "1. Get Projects",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [320, 200],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "test_table_{{ $now.format('YYYY_MM_DD_HHmmss') }}"
+      },
+      "id": "create-table",
+      "name": "2. Create Test Table",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [520, 200],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "column",
+        "operation": "add",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}",
+        "columnName": "name",
+        "columnType": "text",
+        "isNullable": true
+      },
+      "id": "add-column",
+      "name": "3. Add Name Column",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [720, 200],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "column",
+        "operation": "add",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}",
+        "columnName": "email",
+        "columnType": "text",
+        "isNullable": false
+      },
+      "id": "add-email-column",
+      "name": "4. Add Email Column",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [920, 200],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}",
+        "data": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\"\n}"
+      },
+      "id": "insert-record-1",
+      "name": "5. Insert Record 1",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [320, 400],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "create",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}",
+        "data": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@example.com\"\n}"
+      },
+      "id": "insert-record-2",
+      "name": "6. Insert Record 2",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [520, 400],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "record",
+        "operation": "getMany",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}",
+        "limit": 10
+      },
+      "id": "get-records",
+      "name": "7. Get All Records",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [720, 400],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "getSchema",
+        "projectId": "={{ $('1. Get Projects').first().json.id }}",
+        "tableName": "={{ $('2. Create Test Table').first().json.tableName }}"
+      },
+      "id": "get-schema",
+      "name": "8. Get Table Schema",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "position": [920, 400],
+      "credentials": {
+        "appStructApi": "{{$credentials.appStructApi}}"
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "test_summary",
+              "value": "All operations completed successfully!\n\nProject: {{ $('1. Get Projects').first().json.projectName }}\nTable: {{ $('2. Create Test Table').first().json.tableName }}\nRecords Created: 2\nColumns Added: 2\nTotal Records: {{ $('7. Get All Records').all().length }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "summary",
+      "name": "9. Test Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "1. Get Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Get Projects": {
+      "main": [
+        [
+          {
+            "node": "2. Create Test Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Create Test Table": {
+      "main": [
+        [
+          {
+            "node": "3. Add Name Column",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Add Name Column": {
+      "main": [
+        [
+          {
+            "node": "4. Add Email Column",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Add Email Column": {
+      "main": [
+        [
+          {
+            "node": "5. Insert Record 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Insert Record 1": {
+      "main": [
+        [
+          {
+            "node": "6. Insert Record 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Insert Record 2": {
+      "main": [
+        [
+          {
+            "node": "7. Get All Records",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "8. Get Table Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Get All Records": {
+      "main": [
+        [
+          {
+            "node": "9. Test Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Get Table Schema": {
+      "main": [
+        [
+          {
+            "node": "9. Test Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1.0.0"
+}

@@ -10,6 +10,10 @@ AppStruct is a no-code backend platform that lets you create APIs, databases, an
 
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
+```
+npm install n8n-nodes-appstruct
+```
+
 ## Operations
 
 ### Projects

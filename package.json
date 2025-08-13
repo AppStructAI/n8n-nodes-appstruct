@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-appstruct",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "n8n community node for AppStruct - no-code backend platform integration",
 	"keywords": [
 		"n8n-community-node-package",
@@ -37,15 +37,15 @@
 		"README.md",
 		"Logo.svg"
 	],
-	  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/AppStructApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/AppStruct/AppStruct.node.js"
-    ]
-  },
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"credentials": [
+			"dist/credentials/AppStructApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/AppStruct/AppStruct.node.js"
+		]
+	},
 	"devDependencies": {
 		"@typescript-eslint/parser": "^5.45.0",
 		"eslint": "^8.57.1",

@@ -1,6 +1,8 @@
 # n8n-nodes-appstruct
 
-This is an n8n community node that lets you use [AppStruct](https://appstruct.cloud) in your n8n workflows.
+![AppStruct Logo](https://raw.githubusercontent.com/AppStructAI/n8n-nodes-appstruct/main/Logo.svg)
+
+This is an n8n community node that lets you use [AppStruct](https://appstruct.ai) in your n8n workflows.
 
 AppStruct is a no-code backend platform that lets you create APIs, databases, and backend logic without writing code.
 
@@ -45,7 +47,6 @@ This node is compatible with n8n version 1.0.0 and above.
 
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
 - [AppStruct Documentation](https://appstruct.cloud/docs)
-- [AppStruct API Reference](https://api.appstruct.cloud/graphql)
 - [GitHub Repository](https://github.com/AppStructAI/n8n-nodes-appstruct)
 
 ## License

@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-appstruct",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "n8n community node for AppStruct - no-code backend platform integration",
 	"keywords": [
 		"n8n-community-node-package",
@@ -12,7 +12,7 @@
 		"no-code"
 	],
 	"license": "MIT",
-	"homepage": "https://appstruct.cloud",
+	"homepage": "https://appstruct.ai",
 	"author": {
 		"name": "AppStruct",
 		"email": "support@appstruct.cloud"
@@ -33,7 +33,9 @@
 		"prepublishOnly": "npm run build && npm run lint -s"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"README.md",
+		"Logo.svg"
 	],
 	  "n8n": {
     "n8nNodesApiVersion": 1,

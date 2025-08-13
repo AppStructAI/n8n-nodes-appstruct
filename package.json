@@ -41,7 +41,7 @@
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"credentials": [
-			"dist/credentials/AppStructApi.credentials.js"
+			"dist/nodes/credentials/AppStructApi.credentials.js"
 		],
 		"nodes": [
 			"dist/nodes/AppStruct/AppStruct.node.js"

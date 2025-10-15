@@ -2522,6 +2522,10 @@ mute-stdout@^1.0.0:
   resolved "https://registry.npmjs.org/mute-stdout/-/mute-stdout-1.0.1.tgz"
   integrity sha512-kDcwXR4PS7caBpuRYYBUz9iVixUk3anO3f5OYFiIPwK/20vCzKCHyKoulbiDY1S53zD2bxUpxN/IJ+TnXjfvxg==
 
+"n8n-nodes-appstruct@file:../../../../../../../../../opt/homebrew/Cellar/nvm/0.39.5/versions/node/v22.12.0/lib/node_modules/n8n-nodes-appstruct":
+  version "1.0.4"
+  resolved "file:../../../../../../../../../opt/homebrew/Cellar/nvm/0.39.5/versions/node/v22.12.0/lib/node_modules/n8n-nodes-appstruct"
+
 n8n-workflow@*:
   version "1.82.0"
   resolved "https://registry.npmjs.org/n8n-workflow/-/n8n-workflow-1.82.0.tgz"

@@ -35,7 +35,9 @@ export class AppStructApi implements ICredentialType {
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
-			headers: {},
+			headers: {
+				'Content-Type': 'application/json',
+			},
 		},
 	};
 

@@ -9,6 +9,7 @@ import {
 	NodeApiError,
 	NodeOperationError,
 	NodeConnectionType,
+	LoggerProxy as Logger,
 } from 'n8n-workflow';
 
 async function getAccessToken(context: any, credentials: IDataObject): Promise<string> {
@@ -298,8 +299,12 @@ async function pollNewRows(
 	const records = response.data?.getTableData || [];
 	
 	// Debug logging
-	console.log(`[AppStruct Trigger] Found ${records.length} total records`);
-	console.log(`[AppStruct Trigger] Last poll: ${lastPoll}`);
+	Logger.debug('AppStruct Trigger: Found records', { 
+		totalRecords: records.length, 
+		lastPoll,
+		tableName,
+		projectId 
+	});
 	
 	// Filter for new records since last poll
 	const newRecords = records.filter((record: any) => {
@@ -321,7 +326,11 @@ async function pollNewRows(
 		}
 	});
 	
-	console.log(`[AppStruct Trigger] Found ${newRecords.length} new records`);
+	Logger.debug('AppStruct Trigger: Filtered new records', { 
+		newRecords: newRecords.length,
+		tableName,
+		projectId 
+	});
 	
 	// Map to the expected format
 	return newRecords.map((record: any) => ({

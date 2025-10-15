@@ -21,32 +21,69 @@ async function getAccessToken(context: any, credentials: IDataObject): Promise<s
 		}
 	`;
 
-	const response = await context.helpers.httpRequest({
-		method: 'POST',
-		url: 'https://api.appstruct.cloud/graphql',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: {
-			query: loginMutation,
-			variables: {
-				loginInput: {
-					email: credentials.email,
-					password: credentials.password,
+	try {
+		const response = await context.helpers.httpRequest({
+			method: 'POST',
+			url: 'https://api.appstruct.cloud/graphql',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: {
+				query: loginMutation,
+				variables: {
+					loginInput: {
+						email: credentials.email,
+						password: credentials.password,
+					},
 				},
 			},
-		},
-		json: true,
-	});
+			json: true,
+		});
 
-	if (response.errors || !response.data?.login?.access_token) {
+		if (response.errors || !response.data?.login?.access_token) {
+			throw new NodeApiError(context.getNode(), {
+				message: 'Authentication failed',
+				description: 'Invalid credentials or login error',
+			});
+		}
+
+		return response.data.login.access_token;
+	} catch (error) {
 		throw new NodeApiError(context.getNode(), {
-			message: 'Authentication failed',
-			description: 'Invalid credentials or login error',
+			message: 'Failed to authenticate with AppStruct API',
+			description: `Authentication error: ${(error as Error).message}`,
 		});
 	}
+}
 
-	return response.data.login.access_token;
+async function makeAuthenticatedRequest(
+	context: any,
+	accessToken: string,
+	requestOptions: {
+		method: string;
+		url: string;
+		body?: any;
+		headers?: Record<string, string>;
+	}
+): Promise<any> {
+	const options = {
+		...requestOptions,
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${accessToken}`,
+			...requestOptions.headers,
+		},
+		json: true,
+	};
+
+	try {
+		return await context.helpers.httpRequest(options);
+	} catch (error) {
+		throw new NodeApiError(context.getNode(), {
+			message: 'API request failed',
+			description: `Request error: ${(error as Error).message}`,
+		});
+	}
 }
 
 export class AppStruct implements INodeType {
@@ -416,17 +453,12 @@ export class AppStruct implements INodeType {
 					}
 				`;
 
-				const response = await this.helpers.httpRequest({
+				const response = await makeAuthenticatedRequest(this, accessToken, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${accessToken}`,
-					},
 					body: {
 						query,
 					},
-					json: true,
 				});
 
 				if (response.errors) {
@@ -455,20 +487,15 @@ export class AppStruct implements INodeType {
 					}
 				`;
 
-				const response = await this.helpers.httpRequest({
+				const response = await makeAuthenticatedRequest(this, accessToken, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${accessToken}`,
-					},
 					body: {
 						query,
 						variables: {
 							projectId: parseFloat(projectId),
 						},
 					},
-					json: true,
 				});
 
 				if (response.errors) {
@@ -559,17 +586,12 @@ async function executeProjectOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query,
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -601,20 +623,15 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query,
 				variables: {
 					projectId: parseFloat(projectId),
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -632,13 +649,9 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -647,7 +660,6 @@ async function executeTableOperation(
 					columns: [],
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -674,13 +686,9 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query,
 				variables: {
@@ -688,7 +696,6 @@ async function executeTableOperation(
 					tableName,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -705,13 +712,9 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -719,7 +722,6 @@ async function executeTableOperation(
 					tableName,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -758,13 +760,9 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query,
 				variables: {
@@ -772,7 +770,6 @@ async function executeRecordOperation(
 					tableName,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -807,13 +804,9 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -822,7 +815,6 @@ async function executeRecordOperation(
 					data: parsedData,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -857,13 +849,9 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -873,7 +861,6 @@ async function executeRecordOperation(
 					data: parsedData,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -896,13 +883,9 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -911,7 +894,6 @@ async function executeRecordOperation(
 					id: recordId,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -949,13 +931,9 @@ async function executeColumnOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -968,7 +946,6 @@ async function executeColumnOperation(
 					},
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {
@@ -990,13 +967,9 @@ async function executeColumnOperation(
 			}
 		`;
 
-		const response = await context.helpers.httpRequest({
+		const response = await makeAuthenticatedRequest(context, accessToken, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${accessToken}`,
-			},
 			body: {
 				query: mutation,
 				variables: {
@@ -1005,7 +978,6 @@ async function executeColumnOperation(
 					columnName,
 				},
 			},
-			json: true,
 		});
 
 		if (response.errors) {

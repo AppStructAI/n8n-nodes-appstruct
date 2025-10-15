@@ -26,8 +26,8 @@
 		"build": "tsc && gulp build:icons",
 		"dev": "tsc --watch",
 		"format": "prettier nodes --write",
-		"lint": "eslint nodes --ignore-pattern '**/AppStructTrigger.node.ts'",
-		"lintfix": "eslint nodes --fix --ignore-pattern '**/AppStructTrigger.node.ts'",
+		"lint": "eslint nodes",
+		"lintfix": "eslint nodes --fix",
 		"test:build": "node scripts/test-build.js",
 		"test:quick": "./scripts/quick-test.sh",
 		"prepublishOnly": "npm run build && npm run lint -s"
@@ -44,7 +44,8 @@
 			"dist/nodes/credentials/AppStructApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/AppStruct/AppStruct.node.js"
+			"dist/nodes/AppStruct/AppStruct.node.js",
+			"dist/nodes/AppStruct/AppStructTrigger.node.js"
 		]
 	},
 	"devDependencies": {

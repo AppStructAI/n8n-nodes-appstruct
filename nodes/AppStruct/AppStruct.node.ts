@@ -486,7 +486,7 @@ export class AppStruct implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const returnData: IDataObject[] = [];
+		const returnData: INodeExecutionData[] = [];
 
 		const credentials = await this.getCredentials('appStructApi');
 		const accessToken = await getAccessToken(this, credentials);
@@ -513,20 +513,33 @@ export class AppStruct implements INodeType {
 				}
 
 				if (Array.isArray(responseData)) {
-					returnData.push(...responseData);
+					// For array responses, each item should be paired with the input item
+					responseData.forEach((item) => {
+						returnData.push({
+							json: item,
+							pairedItem: { item: i },
+						});
+					});
 				} else {
-					returnData.push(responseData);
+					// For single responses, pair with the input item
+					returnData.push({
+						json: responseData,
+						pairedItem: { item: i },
+					});
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ error: (error as Error).message });
+					returnData.push({
+						json: { error: (error as Error).message },
+						pairedItem: { item: i },
+					});
 					continue;
 				}
 				throw error;
 			}
 		}
 
-		return [this.helpers.returnJsonArray(returnData)];
+		return [returnData];
 	}
 }
 

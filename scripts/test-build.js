@@ -41,7 +41,7 @@ function checkFileStructure() {
   const requiredFiles = [
     'dist/nodes/AppStruct/AppStruct.node.js',
     'dist/nodes/AppStruct/AppStructTrigger.node.js',
-    'dist/credentials/AppStructApi.credentials.js',
+    'dist/nodes/credentials/AppStructApi.credentials.js',
     'dist/nodes/AppStruct/appstruct.svg'
   ];
 

@@ -1,62 +1,67 @@
-# n8n-nodes-appstruct
+# AppStruct nodes for n8n
 
 ![AppStruct Logo](https://raw.githubusercontent.com/AppStructAI/n8n-nodes-appstruct/main/Logo.svg)
 
-This is an n8n community node that lets you use [AppStruct](https://appstruct.ai) in your n8n workflows.
+Connect [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_product) projects, tables and records to an n8n workflow. AppStruct combines visual app building with a separate collaborative workspace for documents, spreadsheets and presentations.
 
-AppStruct is a no-code backend platform that lets you create APIs, databases, and backend logic without writing code.
+This community package works with **App Builder projects and tables**. Docs, Sheets and Slides use separate [MCP integrations](https://appstruct.ai/integrations/mcp?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_mcp); their product API keys are not the credentials for this node.
 
-## Installation
+## Start here: list your projects
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+Use [the manual first-read workflow](examples/list-projects-read-only.json) to check the connection before configuring writes or a scheduled automation.
 
+```text
+Manual trigger → AppStruct: Project / Get Many → inspect IDs and project names
 ```
-npm install n8n-nodes-appstruct
-```
 
-## Operations
+1. Install `n8n-nodes-appstruct` on a self-hosted n8n instance that allows community packages. Follow [n8n's installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment.
+2. Download `examples/list-projects-read-only.json`, then import it using the n8n editor's **Import from File** option. See [n8n's import/export guide](https://docs.n8n.io/workflows/export-import/).
+3. Open the **List AppStruct projects** node and select an **AppStruct API** credential. The current package uses your AppStruct account email and password, stored in n8n credentials, to obtain an access token.
+4. Execute the manual workflow. Compare the returned `id` and `projectName` values with your AppStruct Apps library. An empty library can produce an empty result; create a separate practice project and repeat the check if needed.
 
-### Projects
-- **Get Many**: Retrieve all projects from your AppStruct account
+The starter is inactive and contains no credentials, pinned account data, automatic triggers or third-party destination nodes. It selects a read operation; the account credential itself is **not** restricted to reads. Use an n8n instance you trust, inspect every operation you add, and remove credential references and execution data before sharing an export.
 
-### Tables  
-- **Get Many**: List all tables in a project
-- **Create**: Create a new table
-- **Get Schema**: Get table structure and column information
-- **Delete**: Remove a table
 
-### Records
-- **Get Many**: Retrieve records from a table with optional limit
-- **Create**: Insert a new record into a table
-- **Update**: Modify an existing record
-- **Delete**: Remove a record from a table
+## Installation and hosting
 
-### Columns
-- **Add**: Add a new column to an existing table
+Package name: `n8n-nodes-appstruct`.
 
-## Credentials
+The npm installation path is for self-hosted n8n. n8n Cloud supports verified community nodes; this repository does not establish AppStruct as a verified Cloud node or promise availability there. Check the [current n8n community-node requirements](https://docs.n8n.io/integrations/community-nodes/installation/) before choosing a deployment.
 
-You need to configure AppStruct API credentials:
+## Supported operations
 
-1. **Email**: Your AppStruct account email
-2. **Password**: Your AppStruct account password
+| Resource | Operations |
+| --- | --- |
+| Projects | Get Many |
+| Tables | Get Many, Create, Get Schema, Delete |
+| Records | Get Many, Create, Update, Delete |
+| Columns | Add |
 
-The node will automatically handle authentication and obtain access tokens.
+For operations on tables or records, select the actual project and table from your account. The first-read example intentionally does not hard-code either. Authentication and project-list behavior are implemented in [AppStruct.node.ts](nodes/AppStruct/AppStruct.node.ts).
 
-## Compatibility
+## Build one useful workflow
 
-This node is compatible with n8n version 1.0.0 and above.
+For a service-request workflow, first define the form, stored fields and status update in AppStruct. The [service-request app tutorial](https://appstruct.ai/guides/build-service-request-app?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_tutorial) uses an educational example to plan these steps.
+
+Then read a small set of fictional requests from the selected table in n8n. Before connecting notifications, decide which records qualify, what information to send and how repeated runs avoid duplicate messages. Test the destination and failure behavior separately before enabling a schedule.
+
+The older [basic workflow](examples/basic-workflow.json) is a different example: it polls, creates log records and includes a placeholder Slack webhook. Configure and review those operations before running it; use the manual project-list starter for your first connection check.
+
+## Troubleshooting
+
+- **Unknown node after import:** confirm the community package is installed and available in the same n8n instance. Follow your administrator's restart requirements.
+- **Authentication fails:** check the chosen AppStruct credential and the account's email/password sign-in. This package does not take a Docs, Sheets or Slides API key.
+- **No projects returned:** check the account and Apps library. Importing the workflow is not proof of a working authenticated connection.
+- **A later write fails:** verify the actual selected project, table schema, operation and mapped fields in a practice workflow before retrying.
 
 ## Resources
 
-- [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
-- [AppStruct Documentation](https://appstruct.cloud/docs)
-- [GitHub Repository](https://github.com/AppStructAI/n8n-nodes-appstruct)
+- [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_resources)
+- [n8n community-node documentation](https://docs.n8n.io/integrations/community-nodes/)
+- [Source repository](https://github.com/AppStructAI/n8n-nodes-appstruct)
 
-## License
+## License and support
 
-MIT
+MIT. See [LICENSE.md](LICENSE.md).
 
-## Support
-
-For support, please contact [support@appstruct.cloud](mailto:support@appstruct.cloud) or visit [AppStruct website](https://appstruct.cloud).
+Contact [support@appstruct.cloud](mailto:support@appstruct.cloud) for support. Include your package and n8n versions and the failing operation; do not send passwords, tokens or private workflow exports.

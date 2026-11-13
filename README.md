@@ -21,6 +21,7 @@ Manual trigger → AppStruct: Project / Get Many → inspect IDs and project nam
 
 The starter is inactive and contains no credentials, pinned account data, automatic triggers or third-party destination nodes. It selects a read operation; the account credential itself is **not** restricted to reads. Use an n8n instance you trust, inspect every operation you add, and remove credential references and execution data before sharing an export.
 
+For the full walkthrough and troubleshooting, see the [AppStruct n8n setup guide](https://appstruct.ai/integrations/n8n?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_guide).
 
 ## Installation and hosting
 
@@ -56,6 +57,7 @@ The older [basic workflow](examples/basic-workflow.json) is a different example:
 
 ## Resources
 
+- [AppStruct n8n guide](https://appstruct.ai/integrations/n8n?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_resources)
 - [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_resources)
 - [n8n community-node documentation](https://docs.n8n.io/integrations/community-nodes/)
 - [Source repository](https://github.com/AppStructAI/n8n-nodes-appstruct)

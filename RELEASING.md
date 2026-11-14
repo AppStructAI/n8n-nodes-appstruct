@@ -27,8 +27,11 @@ An npm maintainer configures this package's **Settings → Trusted Publishers**:
 | Repository | `n8n-nodes-appstruct` |
 | Workflow filename | `publish.yml` |
 | Environment | Leave blank; the workflow does not use a GitHub environment |
+| Allowed actions | Enable direct publishing with `npm publish`; managing dist-tags is not needed |
 
 This grants that specific workflow permission to publish the package with short-lived OIDC credentials. A persistent npm token is not needed. See [npm's documentation](https://docs.npmjs.com/trusted-publishers/).
+
+New trusted publishers default to staged publication. The prepared workflow uses `npm publish`, so explicitly allow that action when adding the publisher. Do not start the workflow until this package-level setup is complete.
 
 ## Deliberate release
 

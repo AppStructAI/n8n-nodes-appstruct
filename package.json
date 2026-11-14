@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-appstruct",
-	"version": "1.0.6",
+	"version": "2.0.0",
 	"description": "n8n community nodes for AppStruct App Builder projects, tables and records",
 	"keywords": [
 		"n8n-community-node-package",
@@ -21,23 +21,22 @@
 		"type": "git",
 		"url": "https://github.com/AppStructAI/n8n-nodes-appstruct.git"
 	},
-	"main": "index.js",
 	"scripts": {
-		"build": "tsc && gulp build:icons",
-		"dev": "tsc --watch",
+		"build": "n8n-node build",
+		"dev": "n8n-node dev",
 		"format": "prettier nodes --write",
-		"lint": "eslint nodes",
-		"lintfix": "eslint nodes --fix",
-		"test:build": "node scripts/test-build.js",
-		"test:quick": "./scripts/quick-test.sh",
-		"prepublishOnly": "npm run lint -s && npm run test:credentials",
-		"test:credentials": "npm run build && node --test scripts/credential-test.test.cjs"
+		"lint": "n8n-node lint",
+		"lintfix": "n8n-node lint --fix",
+		"prepublishOnly": "npm run lint && npm test && npm run check:scanner && npm run check:package",
+		"test:credentials": "npm run build && node --test scripts/credential-test.test.cjs",
+		"check:scanner": "node scripts/check-scanner.mjs",
+		"test": "npm run build && node --test scripts/*.test.cjs",
+		"test:runtime": "node scripts/runtime-smoke.mjs",
+		"check:package": "node scripts/check-package.mjs"
 	},
 	"files": [
 		"dist",
-		"nodes",
-		"README.md",
-		"Logo.svg"
+		"examples/list-projects-read-only.json"
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
@@ -47,18 +46,21 @@
 		"nodes": [
 			"dist/nodes/AppStruct/AppStruct.node.js",
 			"dist/nodes/AppStruct/AppStructTrigger.node.js"
-		]
+		],
+		"strict": true
 	},
 	"devDependencies": {
-		"@typescript-eslint/parser": "^5.45.0",
-		"eslint": "^8.57.1",
-		"eslint-plugin-n8n-nodes-base": "^1.11.0",
-		"gulp": "^4.0.2",
-		"n8n-workflow": "*",
-		"prettier": "^2.7.1",
-		"typescript": "^4.8.4"
+		"@n8n/node-cli": "0.56.4",
+		"@n8n/scan-community-package": "0.43.0",
+		"eslint": "9.29.0",
+		"n8n-workflow": "2.16.0",
+		"prettier": "3.6.2",
+		"typescript": "5.9.3"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
+	},
+	"engines": {
+		"node": ">=24.0.0"
 	}
 }

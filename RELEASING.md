@@ -1,36 +1,24 @@
-# Release and n8n verification
+# Publishing and n8n verification
 
-Current status: npm 1.0.5 is the published community package. The 1.0.6 source
-changes are not a published release. AppStruct is not claimed as an n8n-verified
-or n8n Cloud node.
+The source targets **2.0.0**, using current n8n APIs and Node.js 24+. A merged PR is not an npm release or an n8n verification. Check the [published npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing.
 
-**Verification remains blocked.** The current official scanner rejects npm 1.0.5
-for missing provenance. A separate local source-only check also reports legacy
-node metadata, manual-auth requests and a deprecated credential-test request
-helper. This PR fixes the false-success credential test and prepares the release
-path; it does not resolve every verification finding. The publish workflow checks
-the current source rules and will stop before publishing while these findings
-remain. `ICredentialTestFunctions` in the locked n8n-workflow 1.82.0 still exposes
-the legacy `helpers.request` API; migrating this needs n8n compatibility review,
-not a cast to an unavailable helper or a disabled scanner rule.
+## Release gates
 
-## What the credential tests establish
+```sh
+npm ci --ignore-scripts
+npm run lint
+npm test
+npm run check:scanner
+npm run check:package
+```
 
-Run `npm ci --ignore-scripts` and `npm run test:credentials` with Node.js 22.
-The tests use fictional inputs and mocked responses; they do not contact AppStruct,
-create an account, or establish live compatibility with a particular n8n instance.
-They cover HTTP-success GraphQL failures that the previous declarative credential
-test accepted, missing tokens, successful login and both node types' test wiring.
-The existing workflow operations and account email/password login contract remain
-the same. A test login obtains an access token but does not create a project or row.
+The strict official n8n lint config is unchanged. Source and compiled-tarball checks use `@n8n/scan-community-package`. No runtime npm dependencies are shipped. The installed-n8n smoke procedure is in [TESTING.md](TESTING.md). Before publishing, record its results plus the real-account manual first-read check. Mocked HTTP establishes n8n integration behavior, not a successful production account login.
 
-Before release, test credentials and the manual first-read workflow in a private
-self-hosted n8n practice instance. Check valid and invalid credentials, then inspect
-project IDs. Do not put secrets, account responses or execution data in this repo.
+The final public-registry scanner cannot pass before a new package is published with provenance. The old npm release lacks it; do not treat that as a remaining source-code finding or claim a verified listing from local checks alone.
 
-## One-time npm setup
+## One-time npm Trusted Publisher setup
 
-An npm maintainer must configure the package's **Settings → Trusted Publishers**:
+An npm maintainer configures this package's **Settings → Trusted Publishers**:
 
 | Field | Value |
 | --- | --- |
@@ -38,34 +26,26 @@ An npm maintainer must configure the package's **Settings → Trusted Publishers
 | Owner | `AppStructAI` |
 | Repository | `n8n-nodes-appstruct` |
 | Workflow filename | `publish.yml` |
-| Environment | Leave blank; this workflow does not use a GitHub environment |
+| Environment | Leave blank; the workflow does not use a GitHub environment |
 
-This grants that specific workflow permission to publish this npm package via
-short-lived OIDC credentials. It does not require a long-lived npm token. See the
-[npm trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/).
+This grants that specific workflow permission to publish the package with short-lived OIDC credentials. A persistent npm token is not needed. See [npm's documentation](https://docs.npmjs.com/trusted-publishers/).
 
 ## Deliberate release
 
-1. Resolve the remaining current-scanner findings, complete live practice-instance
-   testing and review the pull request.
-2. Merge the reviewed source and workflows into `main`. The CI job must pass.
-3. An authorized maintainer runs **Publish to npm** manually on `main`, with the
-   exact version from `package.json`. A push, tag or merge does not publish.
-4. Confirm the published version, package contents and npm provenance, including
-   the expected source repository, commit and workflow. Record the Actions URL.
-5. Run the current official scanner on the published version:
-   `npx @n8n/scan-community-package n8n-nodes-appstruct@1.0.6`.
-   A successful local build or an empty command log is not a passing scanner result.
+1. Finish the documented package/runtime/live-account checks and merge the reviewed source into `main`.
+2. Confirm `main` passes GitHub Actions. Review `package.json` and the target version.
+3. An authorized maintainer runs **Publish to npm** manually on `main`, with version `2.0.0`. Pushes, tags and merges do not publish. The workflow stops on failed tests, source checks or tarball checks.
+4. Verify the published version, package contents and npm provenance. Confirm the attestation identifies this repository, the expected source commit and `.github/workflows/publish.yml`. Record the Actions URL.
+5. Run the full registry scanner on the released version:
 
-## Submit for verification after release
+```sh
+npx @n8n/scan-community-package@0.43.0 n8n-nodes-appstruct@2.0.0
+```
 
-Use the [n8n Creator Portal](https://creators.n8n.io/nodes) only after publication,
-the scanner and live checks pass. Supply the public package and source repository,
-the setup guide at https://appstruct.ai/integrations/n8n and the manual read-only
-starter. Disclose the account email/password credential and polling behavior.
-Do not claim Cloud support or a security endorsement before n8n accepts it.
+6. Update the release evidence with the published package integrity and registry scan result. A local tarball is for testing; publication must come from GitHub Actions to obtain provenance.
 
-As checked on November 14, 2026, n8n requires GitHub Actions publication with
-provenance for verification and says review can take up to four weeks:
-[submission instructions](https://docs.n8n.io/connect/create-nodes/deploy-your-node/submit-community-nodes/),
-[verification guidelines](https://docs.n8n.io/connect/create-nodes/build-your-node/reference/verification-guidelines/).
+## Creator Portal
+
+After all release checks pass, sign in to the [n8n Creator Portal](https://creators.n8n.io/nodes) and submit the package for verification. Include the exact npm version, public source repository, [setup guide](https://appstruct.ai/integrations/n8n) and manual project-list starter. Disclose account email/password authentication, the minimum n8n version and polling's baseline/limit behavior.
+
+n8n's [submission procedure](https://docs.n8n.io/connect/create-nodes/deploy-your-node/submit-community-nodes/) requires GitHub Actions publication with provenance. Review can take up to four weeks. AppStruct must not be presented as an n8n-verified or Cloud-available node before acceptance.

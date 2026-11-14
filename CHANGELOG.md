@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 1.0.6
+
+### Fixed
+- Require an access token without GraphQL errors when testing account credentials.
+- Use the same credential test for the action and polling nodes.
+- Return a safe error message without echoing authentication responses or exceptions.
+
+### Added
+- Offline regression tests for successful login, GraphQL failures, malformed responses and credential-test wiring.
+- Pull-request checks and a manual GitHub Actions publish workflow using npm trusted publishing and provenance.
+
+This version is prepared in source, not yet published to npm or verified by n8n.
+
 ## [1.0.0] - 2024-01-XX
 
 ### Added

@@ -1,6 +1,5 @@
 import {
 	IAuthenticateGeneric,
-	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
 } from 'n8n-workflow';
@@ -41,40 +40,4 @@ export class AppStructApi implements ICredentialType {
 		},
 	};
 
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: 'https://api.appstruct.cloud',
-			url: '/graphql',
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: {
-				query: `
-					mutation ($loginInput: LoginInput!) {
-						login(loginInput: $loginInput) {
-							access_token
-							refresh_token
-						}
-					}
-				`,
-				variables: {
-					loginInput: {
-						email: '={{$credentials.email}}',
-						password: '={{$credentials.password}}',
-					},
-				},
-			},
-		},
-		rules: [
-			{
-				type: 'responseSuccessBody',
-				properties: {
-					key: 'data.login.access_token',
-					message: 'Login successful',
-					value: 'test',
-				},
-			},
-		],
-	};
 }

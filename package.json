@@ -1,7 +1,7 @@
 {
 	"name": "n8n-nodes-appstruct",
-	"version": "1.0.5",
-	"description": "n8n community node for AppStruct - no-code backend platform integration",
+	"version": "1.0.6",
+	"description": "n8n community nodes for AppStruct App Builder projects, tables and records",
 	"keywords": [
 		"n8n-community-node-package",
 		"n8n",
@@ -30,7 +30,8 @@
 		"lintfix": "eslint nodes --fix",
 		"test:build": "node scripts/test-build.js",
 		"test:quick": "./scripts/quick-test.sh",
-		"prepublishOnly": "npm run build && npm run lint -s"
+		"prepublishOnly": "npm run lint -s && npm run test:credentials",
+		"test:credentials": "npm run build && node --test scripts/credential-test.test.cjs"
 	},
 	"files": [
 		"dist",

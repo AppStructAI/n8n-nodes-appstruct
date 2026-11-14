@@ -11,6 +11,7 @@ import {
 	NodeConnectionType,
 	LoggerProxy as Logger,
 } from 'n8n-workflow';
+import { appStructApiTest } from './AppStruct.credentials';
 
 async function getAccessToken(context: any, credentials: IDataObject): Promise<string> {
 	const loginMutation = `
@@ -68,6 +69,7 @@ export class AppStructTrigger implements INodeType {
 			{
 				name: 'appStructApi',
 				required: true,
+				testedBy: 'appStructApiTest',
 			},
 		],
 		polling: true,
@@ -140,6 +142,7 @@ export class AppStructTrigger implements INodeType {
 	};
 
 	methods = {
+		credentialTest: { appStructApiTest },
 		loadOptions: {
 			async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const credentials = await this.getCredentials('appStructApi');

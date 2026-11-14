@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
 	IDataObject,
 	INodeExecutionData,
@@ -7,55 +8,17 @@ import {
 	ILoadOptionsFunctions,
 	INodePropertyOptions,
 	NodeApiError,
+	NodeConnectionTypes,
 	NodeOperationError,
-	NodeConnectionType,
-	LoggerProxy as Logger,
 } from 'n8n-workflow';
-import { appStructApiTest } from './AppStruct.credentials';
-
-async function getAccessToken(context: any, credentials: IDataObject): Promise<string> {
-	const loginMutation = `
-		mutation ($loginInput: LoginInput!) {
-			login(loginInput: $loginInput) {
-				access_token
-				refresh_token
-			}
-		}
-	`;
-
-	const response = await context.helpers.httpRequest({
-		method: 'POST',
-		url: 'https://api.appstruct.cloud/graphql',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: {
-			query: loginMutation,
-			variables: {
-				loginInput: {
-					email: credentials.email,
-					password: credentials.password,
-				},
-			},
-		},
-		json: true,
-	});
-
-	if (response.errors || !response.data?.login?.access_token) {
-		throw new NodeApiError(context.getNode(), {
-			message: 'Authentication failed',
-			description: 'Invalid credentials or login error',
-		});
-	}
-
-	return response.data.login.access_token;
-}
+import { appStructApiRequest } from './AppStructApi';
 
 export class AppStructTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'AppStruct Trigger',
 		name: 'appStructTrigger',
-		icon: 'file:appstruct.svg',
+		subtitle: '={{$parameter["triggerOn"]}}',
+		icon: { light: 'file:appstruct.svg', dark: 'file:appstruct.svg' },
 		group: ['trigger'],
 		version: 1,
 		description: 'Triggers when something happens in AppStruct',
@@ -63,13 +26,11 @@ export class AppStructTrigger implements INodeType {
 			name: 'AppStruct Trigger',
 		},
 		inputs: [],
-		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionType.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'appStructApi',
 				required: true,
-				testedBy: 'appStructApiTest',
 			},
 		],
 		polling: true,
@@ -112,7 +73,8 @@ export class AppStructTrigger implements INodeType {
 				},
 				default: '',
 				required: true,
-				description: 'The project to monitor. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description:
+					'The project to monitor. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Table Name or ID',
@@ -129,25 +91,25 @@ export class AppStructTrigger implements INodeType {
 				},
 				default: '',
 				required: true,
-				description: 'The table to monitor. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description:
+					'The table to monitor. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
-				displayName: 'Poll Interval (Minutes)',
-				name: 'pollInterval',
+				displayName: 'Record Poll Limit',
+				name: 'pollLimit',
 				type: 'number',
-				default: 5,
-				description: 'How often to check for changes (in minutes)',
+				default: 1000,
+				typeOptions: { minValue: 2, maxValue: 10000 },
+				displayOptions: { show: { triggerOn: ['newRow', 'updatedRow'] } },
+				description:
+					'Maximum records to inspect. Polling stops at this limit to avoid silently missing changes. Use a smaller table or increase this limit.',
 			},
 		],
 	};
 
 	methods = {
-		credentialTest: { appStructApiTest },
 		loadOptions: {
 			async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('appStructApi');
-				const accessToken = await getAccessToken(this, credentials);
-
 				const query = `
 					query {
 						myProjects {
@@ -157,12 +119,11 @@ export class AppStructTrigger implements INodeType {
 					}
 				`;
 
-				const response = await this.helpers.httpRequest({
+				const response = await appStructApiRequest(this, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${accessToken}`,
 					},
 					body: {
 						query,
@@ -175,7 +136,7 @@ export class AppStructTrigger implements INodeType {
 				}
 
 				const projects = response.data?.myProjects || [];
-				return projects.map((project: any) => ({
+				return projects.map((project) => ({
 					name: project.projectName,
 					value: project.id.toString(),
 				}));
@@ -187,21 +148,17 @@ export class AppStructTrigger implements INodeType {
 					return [];
 				}
 
-				const credentials = await this.getCredentials('appStructApi');
-				const accessToken = await getAccessToken(this, credentials);
-
 				const query = `
 					query getBackendTables($projectId: Float!) {
 						getBackendTables(projectId: $projectId)
 					}
 				`;
 
-				const response = await this.helpers.httpRequest({
+				const response = await appStructApiRequest(this, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${accessToken}`,
 					},
 					body: {
 						query,
@@ -228,225 +185,124 @@ export class AppStructTrigger implements INodeType {
 	async poll(this: IPollFunctions): Promise<INodeExecutionData[][] | null> {
 		const triggerOn = this.getNodeParameter('triggerOn') as string;
 		const projectId = this.getNodeParameter('projectId') as string;
-		const tableName = this.getNodeParameter('tableName') as string;
+		const tableName =
+			triggerOn === 'newTable' ? '' : (this.getNodeParameter('tableName') as string);
+		const staticData = this.getWorkflowStaticData('node');
+		const current: { id: string; value: IDataObject }[] = [];
 
-		const credentials = await this.getCredentials('appStructApi');
-		const accessToken = await getAccessToken(this, credentials);
-
-		const workflowStaticData = this.getWorkflowStaticData('node');
-		const lastPoll = workflowStaticData.lastPoll as string || new Date(0).toISOString();
-
-		let responseData: IDataObject[] = [];
-
-		try {
-			if (triggerOn === 'newRow') {
-				responseData = await pollNewRows(this, accessToken, projectId, tableName, lastPoll);
-			} else if (triggerOn === 'updatedRow') {
-				responseData = await pollUpdatedRows(this, accessToken, projectId, tableName, lastPoll);
-			} else if (triggerOn === 'newTable') {
-				responseData = await pollNewTables(this, accessToken, projectId, lastPoll);
-			} else if (triggerOn === 'newColumn') {
-				responseData = await pollNewColumns(this, accessToken, projectId, tableName, lastPoll);
+		if (triggerOn === 'newRow' || triggerOn === 'updatedRow') {
+			const limit = this.getNodeParameter('pollLimit', 1000) as number;
+			if (!Number.isInteger(limit) || limit < 2 || limit > 10000) {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Record Poll Limit must be an integer between 2 and 10000.',
+				);
 			}
-
-			workflowStaticData.lastPoll = new Date().toISOString();
-
-			if (responseData.length === 0) {
-				return null;
+			const response = await appStructApiRequest(this, {
+				method: 'POST',
+				url: 'https://api.appstruct.cloud/graphql',
+				json: true,
+				body: {
+					query:
+						'query getTableData($projectId: Float!, $tableName: String!, $limit: Float!) { getTableData(projectId: $projectId, tableName: $tableName, limit: $limit) { id data } }',
+					variables: { projectId: Number(projectId), tableName, limit },
+				},
+			});
+			if (response.errors?.length) throw new NodeApiError(this.getNode(), response.errors[0]);
+			const rows = response.data?.getTableData;
+			if (!Array.isArray(rows))
+				throw new NodeOperationError(this.getNode(), 'AppStruct did not return table records.');
+			if (rows.length >= limit)
+				throw new NodeOperationError(
+					this.getNode(),
+					'Record Poll Limit reached. Increase the limit or monitor a smaller table to avoid missing changes.',
+				);
+			for (const row of rows) {
+				if (!row.id)
+					throw new NodeOperationError(
+						this.getNode(),
+						'Record polling requires a stable, non-empty record ID.',
+					);
+				current.push({
+					id: row.id,
+					value: { ...row.data, id: row.id, triggerType: triggerOn, tableName },
+				});
 			}
-
-			return [this.helpers.returnJsonArray(responseData)];
-		} catch (error) {
-			throw new NodeOperationError(this.getNode(), `Polling failed: ${(error as Error).message}`);
+		} else if (triggerOn === 'newTable') {
+			const response = await appStructApiRequest(this, {
+				method: 'POST',
+				url: 'https://api.appstruct.cloud/graphql',
+				json: true,
+				body: {
+					query:
+						'query getBackendTables($projectId: Float!) { getBackendTables(projectId: $projectId) }',
+					variables: { projectId: Number(projectId) },
+				},
+			});
+			if (response.errors?.length) throw new NodeApiError(this.getNode(), response.errors[0]);
+			if (!Array.isArray(response.data?.getBackendTables))
+				throw new NodeOperationError(this.getNode(), 'AppStruct did not return a table list.');
+			for (const name of response.data.getBackendTables)
+				current.push({ id: name, value: { tableName: name, triggerType: triggerOn } });
+		} else if (triggerOn === 'newColumn') {
+			const response = await appStructApiRequest(this, {
+				method: 'POST',
+				url: 'https://api.appstruct.cloud/graphql',
+				json: true,
+				body: {
+					query:
+						'query getTableSchema($projectId: Float!, $tableName: String!) { getTableSchema(projectId: $projectId, tableName: $tableName) { name columns { name type isNullable } } }',
+					variables: { projectId: Number(projectId), tableName },
+				},
+			});
+			if (response.errors?.length) throw new NodeApiError(this.getNode(), response.errors[0]);
+			const columns = response.data?.getTableSchema?.columns;
+			if (!Array.isArray(columns))
+				throw new NodeOperationError(this.getNode(), 'AppStruct did not return table columns.');
+			for (const column of columns)
+				current.push({ id: column.name, value: { ...column, tableName, triggerType: triggerOn } });
+		} else {
+			throw new NodeOperationError(this.getNode(), `Unsupported trigger: ${triggerOn}`);
 		}
+
+		// Manual tests preview current items without moving the live polling baseline.
+		if (this.getMode() === 'manual')
+			return current.length
+				? [this.helpers.returnJsonArray(current.map((item) => item.value))]
+				: null;
+		const scope = JSON.stringify([triggerOn, projectId, tableName]);
+		const previous = staticData.appStructSnapshot as
+			| { scope: string; values: Record<string, string> }
+			| undefined;
+		const values = Object.fromEntries(current.map((item) => [item.id, fingerprint(item.value)]));
+		let changes: IDataObject[] = [];
+		if (previous?.scope === scope && previous.values && typeof previous.values === 'object') {
+			changes = current
+				.filter((item) => {
+					const existed = Object.prototype.hasOwnProperty.call(previous.values, item.id);
+					return triggerOn === 'updatedRow'
+						? existed && previous.values[item.id] !== values[item.id]
+						: !existed;
+				})
+				.map((item) => item.value);
+		}
+		// Only IDs and SHA-256 digests are persisted, not copied record contents.
+		staticData.appStructSnapshot = { scope, values };
+		return changes.length ? [this.helpers.returnJsonArray(changes)] : null;
 	}
 }
 
-async function pollNewRows(
-	context: IPollFunctions,
-	accessToken: string,
-	projectId: string,
-	tableName: string,
-	lastPoll: string,
-): Promise<IDataObject[]> {
-	const query = `
-		query getTableData($projectId: Float!, $tableName: String!) {
-			getTableData(projectId: $projectId, tableName: $tableName) {
-				id
-				data
-			}
-		}
-	`;
-
-	const response = await context.helpers.httpRequest({
-		method: 'POST',
-		url: 'https://api.appstruct.cloud/graphql',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${accessToken}`,
-		},
-		body: {
-			query,
-					variables: {
-			projectId: parseFloat(projectId),
-			tableName,
-		},
-		},
-		json: true,
-	});
-
-	if (response.errors) {
-		throw new NodeApiError(context.getNode(), response.errors[0]);
+function canonical(value: unknown): string {
+	if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+	if (value && typeof value === 'object') {
+		return `{${Object.entries(value)
+			.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+			.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`)
+			.join(',')}}`;
 	}
-
-	const records = response.data?.getTableData || [];
-	
-	// Debug logging
-	Logger.debug('AppStruct Trigger: Found records', { 
-		totalRecords: records.length, 
-		lastPoll,
-		tableName,
-		projectId 
-	});
-	
-	// Filter for new records since last poll
-	const newRecords = records.filter((record: any) => {
-		// Check if record has a created_at field
-		const createdAt = record.data?.created_at;
-		if (!createdAt) {
-			// If no created_at field, consider it new (fallback behavior)
-			return true;
-		}
-		
-		// Parse the date and compare with lastPoll
-		try {
-			const recordDate = new Date(createdAt);
-			const lastPollDate = new Date(lastPoll);
-			return recordDate > lastPollDate;
-		} catch (error) {
-			// If date parsing fails, consider it new (fallback behavior)
-			return true;
-		}
-	});
-	
-	Logger.debug('AppStruct Trigger: Filtered new records', { 
-		newRecords: newRecords.length,
-		tableName,
-		projectId 
-	});
-	
-	// Map to the expected format
-	return newRecords.map((record: any) => ({
-		id: record.id,
-		...record.data,
-		triggerType: 'newRow',
-		tableName,
-		// Ensure created_at is properly formatted
-		created_at: record.data?.created_at || new Date().toISOString(),
-	}));
+	return JSON.stringify(value) ?? 'null';
 }
 
-async function pollUpdatedRows(
-	context: IPollFunctions,
-	accessToken: string,
-	projectId: string,
-	tableName: string,
-	lastPoll: string,
-): Promise<IDataObject[]> {
-	return [];
-}
-
-async function pollNewTables(
-	context: IPollFunctions,
-	accessToken: string,
-	projectId: string,
-	lastPoll: string,
-): Promise<IDataObject[]> {
-	const query = `
-		query getBackendTables($projectId: Float!) {
-			getBackendTables(projectId: $projectId)
-		}
-	`;
-
-	const response = await context.helpers.httpRequest({
-		method: 'POST',
-		url: 'https://api.appstruct.cloud/graphql',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${accessToken}`,
-		},
-		body: {
-			query,
-			variables: {
-				projectId: parseFloat(projectId),
-			},
-		},
-		json: true,
-	});
-
-	if (response.errors) {
-		throw new NodeApiError(context.getNode(), response.errors[0]);
-	}
-
-	const tables = response.data?.getBackendTables || [];
-	
-	return tables.map((tableName: string) => ({
-		tableName,
-		triggerType: 'newTable',
-		createdAt: new Date().toISOString(),
-	}));
-}
-
-async function pollNewColumns(
-	context: IPollFunctions,
-	accessToken: string,
-	projectId: string,
-	tableName: string,
-	lastPoll: string,
-): Promise<IDataObject[]> {
-	const query = `
-		query getTableSchema($projectId: Float!, $tableName: String!) {
-			getTableSchema(projectId: $projectId, tableName: $tableName) {
-				name
-				columns {
-					name
-					type
-					isNullable
-				}
-			}
-		}
-	`;
-
-	const response = await context.helpers.httpRequest({
-		method: 'POST',
-		url: 'https://api.appstruct.cloud/graphql',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${accessToken}`,
-		},
-		body: {
-			query,
-			variables: {
-				projectId: parseFloat(projectId),
-				tableName,
-			},
-		},
-		json: true,
-	});
-
-	if (response.errors) {
-		throw new NodeApiError(context.getNode(), response.errors[0]);
-	}
-
-	const schema = response.data?.getTableSchema;
-	if (!schema) {
-		return [];
-	}
-
-	return schema.columns.map((column: any) => ({
-		...column,
-		tableName: schema.name,
-		triggerType: 'newColumn',
-		createdAt: new Date().toISOString(),
-	}));
+function fingerprint(value: IDataObject): string {
+	return createHash('sha256').update(canonical(value)).digest('hex');
 }

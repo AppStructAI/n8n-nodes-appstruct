@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 1.0.6
+## [2.0.0] - Unreleased
+
+### Changed
+- Target n8n 2.47.7+ and Node.js 24+, using current official n8n build/lint APIs.
+- Move account login into credential preAuthentication and use n8n-managed authenticated requests in both nodes.
+- Use AppStruct's supported JSON-client authentication protocol without browser cookies.
+- Adopt strict official linting, one npm lockfile, source/tarball scanning and a manual provenance release gate.
+
+### Fixed
+- Reject malformed or failed login responses rather than reporting a false successful connection.
+- Renew expired tokens once for GraphQL HTTP-200 authentication errors; never replay partial mutation results or permission failures.
+- Implement Updated Row polling and avoid repeating unchanged rows, tables or columns.
+- Use a first-run automatic baseline, preserve it on failures/manual previews and stop visibly when the record polling limit is reached.
+- Add complete icons, trigger subtitle and tool metadata.
+
+### Validation
+- Offline regression tests, real n8n workflow smoke tests with mocked HTTP, and live API schema validation.
+- Publication and final registry provenance verification remain separate release steps.
+
+## [1.0.6] - Unpublished preparation (superseded by 2.0.0)
 
 ### Fixed
 - Require an access token without GraphQL errors when testing account credentials.

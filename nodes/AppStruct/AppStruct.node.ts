@@ -4,94 +4,21 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
+	JsonObject,
 	NodeApiError,
+	NodeConnectionTypes,
 	NodeOperationError,
 	ILoadOptionsFunctions,
 	INodePropertyOptions,
-	NodeConnectionType,
 } from 'n8n-workflow';
-import { appStructApiTest } from './AppStruct.credentials';
-
-async function getAccessToken(context: any, credentials: IDataObject): Promise<string> {
-	const loginMutation = `
-		mutation ($loginInput: LoginInput!) {
-			login(loginInput: $loginInput) {
-				access_token
-				refresh_token
-			}
-		}
-	`;
-
-	try {
-		const response = await context.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://api.appstruct.cloud/graphql',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: {
-				query: loginMutation,
-				variables: {
-					loginInput: {
-						email: credentials.email,
-						password: credentials.password,
-					},
-				},
-			},
-			json: true,
-		});
-
-		if (response.errors || !response.data?.login?.access_token) {
-			throw new NodeApiError(context.getNode(), {
-				message: 'Authentication failed',
-				description: 'Invalid credentials or login error',
-			});
-		}
-
-		return response.data.login.access_token;
-	} catch (error) {
-		throw new NodeApiError(context.getNode(), {
-			message: 'Failed to authenticate with AppStruct API',
-			description: `Authentication error: ${(error as Error).message}`,
-		});
-	}
-}
-
-async function makeAuthenticatedRequest(
-	context: any,
-	accessToken: string,
-	requestOptions: {
-		method: string;
-		url: string;
-		body?: any;
-		headers?: Record<string, string>;
-	}
-): Promise<any> {
-	const options = {
-		...requestOptions,
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${accessToken}`,
-			...requestOptions.headers,
-		},
-		json: true,
-	};
-
-	try {
-		return await context.helpers.httpRequest(options);
-	} catch (error) {
-		throw new NodeApiError(context.getNode(), {
-			message: 'API request failed',
-			description: `Request error: ${(error as Error).message}`,
-		});
-	}
-}
+import { appStructApiRequest } from './AppStructApi';
 
 export class AppStruct implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'AppStruct',
 		name: 'appStruct',
-		icon: 'file:appstruct.svg',
+		icon: { light: 'file:appstruct.svg', dark: 'file:appstruct.svg' },
+		usableAsTool: true,
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -99,15 +26,12 @@ export class AppStruct implements INodeType {
 		defaults: {
 			name: 'AppStruct',
 		},
-		// eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
-		inputs: [NodeConnectionType.Main],
-		// eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				name: 'appStructApi',
 				required: true,
-				testedBy: 'appStructApiTest',
 			},
 		],
 		properties: [
@@ -282,7 +206,8 @@ export class AppStruct implements INodeType {
 				},
 				default: '',
 				required: true,
-				description: 'The project to work with. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description:
+					'The project to work with. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 
 			// Table Name field
@@ -301,7 +226,8 @@ export class AppStruct implements INodeType {
 				},
 				default: '',
 				required: true,
-				description: 'The table to work with. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description:
+					'The table to work with. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 
 			// Table Name field for table operations
@@ -441,12 +367,8 @@ export class AppStruct implements INodeType {
 	};
 
 	methods = {
-		credentialTest: { appStructApiTest },
 		loadOptions: {
 			async getProjects(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('appStructApi');
-				const accessToken = await getAccessToken(this, credentials);
-
 				const query = `
 					query {
 						myProjects {
@@ -456,7 +378,7 @@ export class AppStruct implements INodeType {
 					}
 				`;
 
-				const response = await makeAuthenticatedRequest(this, accessToken, {
+				const response = await appStructApiRequest(this, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
 					body: {
@@ -469,7 +391,7 @@ export class AppStruct implements INodeType {
 				}
 
 				const projects = response.data?.myProjects || [];
-				return projects.map((project: any) => ({
+				return projects.map((project) => ({
 					name: project.projectName,
 					value: project.id.toString(),
 				}));
@@ -481,16 +403,13 @@ export class AppStruct implements INodeType {
 					return [];
 				}
 
-				const credentials = await this.getCredentials('appStructApi');
-				const accessToken = await getAccessToken(this, credentials);
-
 				const query = `
 					query getBackendTables($projectId: Float!) {
 						getBackendTables(projectId: $projectId)
 					}
 				`;
 
-				const response = await makeAuthenticatedRequest(this, accessToken, {
+				const response = await appStructApiRequest(this, {
 					method: 'POST',
 					url: 'https://api.appstruct.cloud/graphql',
 					body: {
@@ -518,9 +437,6 @@ export class AppStruct implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const credentials = await this.getCredentials('appStructApi');
-		const accessToken = await getAccessToken(this, credentials);
-
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -529,13 +445,13 @@ export class AppStruct implements INodeType {
 				let responseData: IDataObject | IDataObject[];
 
 				if (resource === 'project') {
-					responseData = await executeProjectOperation(this, accessToken, operation, i);
+					responseData = await executeProjectOperation(this, operation, i);
 				} else if (resource === 'table') {
-					responseData = await executeTableOperation(this, accessToken, operation, i);
+					responseData = await executeTableOperation(this, operation, i);
 				} else if (resource === 'record') {
-					responseData = await executeRecordOperation(this, accessToken, operation, i);
+					responseData = await executeRecordOperation(this, operation, i);
 				} else if (resource === 'column') {
-					responseData = await executeColumnOperation(this, accessToken, operation, i);
+					responseData = await executeColumnOperation(this, operation, i);
 				} else {
 					throw new NodeOperationError(this.getNode(), `Unknown resource "${resource}"`, {
 						itemIndex: i,
@@ -565,7 +481,7 @@ export class AppStruct implements INodeType {
 					});
 					continue;
 				}
-				throw error;
+				throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 			}
 		}
 
@@ -575,7 +491,6 @@ export class AppStruct implements INodeType {
 
 async function executeProjectOperation(
 	context: IExecuteFunctions,
-	accessToken: string,
 	operation: string,
 	itemIndex: number,
 ): Promise<IDataObject[]> {
@@ -589,7 +504,7 @@ async function executeProjectOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -611,13 +526,13 @@ async function executeProjectOperation(
 
 async function executeTableOperation(
 	context: IExecuteFunctions,
-	accessToken: string,
 	operation: string,
 	itemIndex: number,
 ): Promise<IDataObject | IDataObject[]> {
 	const projectId = context.getNodeParameter('projectId', itemIndex) as string;
 	// Only get tableName for operations that need it (not for getMany)
-	const tableName = operation === 'getMany' ? '' : (context.getNodeParameter('tableName', itemIndex) as string);
+	const tableName =
+		operation === 'getMany' ? '' : (context.getNodeParameter('tableName', itemIndex) as string);
 
 	if (operation === 'getMany') {
 		const query = `
@@ -626,7 +541,7 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -652,7 +567,7 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -689,7 +604,7 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -715,7 +630,7 @@ async function executeTableOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -744,7 +659,6 @@ async function executeTableOperation(
 
 async function executeRecordOperation(
 	context: IExecuteFunctions,
-	accessToken: string,
 	operation: string,
 	itemIndex: number,
 ): Promise<IDataObject | IDataObject[]> {
@@ -763,7 +677,7 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -780,11 +694,11 @@ async function executeRecordOperation(
 		}
 
 		const records = response.data?.getTableData || [];
-		const mappedRecords = records.map((record: any) => ({
+		const mappedRecords = records.map((record) => ({
 			id: record.id,
 			...record.data,
 		}));
-		
+
 		// Apply client-side limiting since API doesn't support it
 		return limit > 0 ? mappedRecords.slice(0, limit) : mappedRecords;
 	}
@@ -795,7 +709,7 @@ async function executeRecordOperation(
 
 		try {
 			parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-		} catch (error) {
+		} catch {
 			throw new NodeOperationError(context.getNode(), 'Invalid JSON in data field', {
 				itemIndex,
 			});
@@ -807,7 +721,7 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -837,7 +751,7 @@ async function executeRecordOperation(
 
 		try {
 			parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-		} catch (error) {
+		} catch {
 			throw new NodeOperationError(context.getNode(), 'Invalid JSON in data field', {
 				itemIndex,
 			});
@@ -852,7 +766,7 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -886,7 +800,7 @@ async function executeRecordOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -916,7 +830,6 @@ async function executeRecordOperation(
 
 async function executeColumnOperation(
 	context: IExecuteFunctions,
-	accessToken: string,
 	operation: string,
 	itemIndex: number,
 ): Promise<IDataObject> {
@@ -934,7 +847,7 @@ async function executeColumnOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {
@@ -970,7 +883,7 @@ async function executeColumnOperation(
 			}
 		`;
 
-		const response = await makeAuthenticatedRequest(context, accessToken, {
+		const response = await appStructApiRequest(context, {
 			method: 'POST',
 			url: 'https://api.appstruct.cloud/graphql',
 			body: {

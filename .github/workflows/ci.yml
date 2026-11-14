@@ -15,9 +15,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run lint
-      - run: npm run test:credentials
-      - run: npm pack --dry-run
+      - run: npm test
+      - run: npm run check:scanner
+      - run: npm run check:package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n8n-package-${{ github.sha }}
+          path: n8n-nodes-appstruct-*.tgz
+          if-no-files-found: error
+          retention-days: 14

@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-appstruct",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "n8n community nodes for AppStruct App Builder projects, tables and records",
 	"keywords": [
 		"n8n-community-node-package",
@@ -15,7 +15,7 @@
 	"homepage": "https://appstruct.ai",
 	"author": {
 		"name": "AppStruct",
-		"email": "support@appstruct.cloud"
+		"email": "tambovcev99@mail.ru"
 	},
 	"repository": {
 		"type": "git",

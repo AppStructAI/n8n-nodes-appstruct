@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - Unreleased
+## [2.0.1] - Unreleased
+
+### Changed
+- Align the package author email with the existing public npm maintainer contact for Creator Portal ownership verification.
+- Document account-level 2FA and access to the package author mailbox as release prerequisites.
+
+## [2.0.0] - 2026-11-15
 
 ### Changed
 - Target n8n 2.47.7+ and Node.js 24+, using current official n8n build/lint APIs.

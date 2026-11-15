@@ -8,7 +8,7 @@ This community package works with **App Builder projects and tables**. Docs, She
 
 ## Version and compatibility
 
-This source targets **2.0.0**. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. If 2.0.0 is not published yet, build and test the candidate locally using [TESTING.md](TESTING.md).
+Version **2.0.0** was published with GitHub Actions provenance and passed the full n8n registry scanner. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. Local candidate checks are documented in [TESTING.md](TESTING.md).
 
 2.x requires **n8n 2.47.7 or newer with Node.js 24+**. It is tested with n8n 2.47.7 and n8n-workflow 2.16.0. Older n8n hosts are not supported by this release. The package keeps its existing node type IDs, version-1 workflow definitions and `appStructApi` email/password credential fields.
 
@@ -20,7 +20,7 @@ Use [the manual first-read workflow](https://appstruct.ai/downloads/appstruct-n8
 Manual trigger → AppStruct: Project / Get Many → inspect IDs and project names
 ```
 
-1. Install the published `n8n-nodes-appstruct@2.0.0` release on a compatible self-hosted n8n instance that allows community packages. Follow [n8n's installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment.
+1. Install a published `n8n-nodes-appstruct@2` release on a compatible self-hosted n8n instance that allows community packages. Follow [n8n's installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment.
 2. Download `examples/list-projects-read-only.json`, then import it using the n8n editor's **Import from File** option. See [n8n's import/export guide](https://docs.n8n.io/workflows/export-import/).
 3. Open the **List AppStruct projects** node and select an **AppStruct API** credential. The package uses your AppStruct account email and password, stored in n8n credentials, to obtain an access token. n8n manages the token through `preAuthentication`; the login uses AppStruct’s explicit JSON-client protocol and does not use browser cookies.
 4. Execute the manual workflow. Compare the returned `id` and `projectName` values with your AppStruct Apps library. An empty library can produce an empty result; create a separate practice project and repeat the check if needed.

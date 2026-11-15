@@ -8,7 +8,7 @@ This community package works with **App Builder projects and tables**. Docs, She
 
 ## Version and compatibility
 
-Version **2.0.0** was published with GitHub Actions provenance and passed the full n8n registry scanner. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. Local candidate checks are documented in [TESTING.md](TESTING.md).
+Version **2.0.1** was published with GitHub Actions provenance and passed the full n8n registry scanner. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. Local candidate checks are documented in [TESTING.md](TESTING.md).
 
 2.x requires **n8n 2.47.7 or newer with Node.js 24+**. It is tested with n8n 2.47.7 and n8n-workflow 2.16.0. Older n8n hosts are not supported by this release. The package keeps its existing node type IDs, version-1 workflow definitions and `appStructApi` email/password credential fields.
 
@@ -60,6 +60,8 @@ Use n8n's **Poll Times** control to set the schedule. The previous custom Poll I
 - n8n's workflow static data stores IDs and SHA-256 digests, not copies of the record contents. Normal n8n execution history can still contain returned records.
 
 Polling sees state at each successful run. It cannot report an item created and deleted between polls or every intermediate edit. Review this behavior before upgrading an active 1.x workflow.
+
+For a bounded exercise, use the [polling walkthrough](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_20261115&utm_content=readme_polling), [inactive New Row workflow](https://blog.appstruct.ai/downloads/appstruct-n8n-new-row-review.json) and [13-check acceptance log](https://blog.appstruct.ai/downloads/appstruct-n8n-polling-checklist.csv). The workflow has no stored credential, project/table IDs or destination. Select your own practice scope before running it. A successful poll advances its snapshot before later nodes finish, so destination failures still need an explicit retry/replay and deduplication design; polling is not an end-to-end exactly-once delivery guarantee.
 
 ## Build one useful workflow
 

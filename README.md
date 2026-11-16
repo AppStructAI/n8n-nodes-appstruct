@@ -78,6 +78,12 @@ The older [basic workflow](examples/basic-workflow.json) is a different example:
 - **No projects returned:** check the account and Apps library. Importing the workflow is not proof of a working authenticated connection.
 - **A later write fails:** verify the actual selected project, table schema, operation and mapped fields in a practice workflow before retrying.
 
+## Community discussion
+
+For questions about the New Row / Updated Row practice exercise, use the [AppStruct polling discussion on n8n Community](https://community.n8n.io/t/appstruct-community-node-test-new-row-and-updated-row-before-adding-a-destination/328923). Include your n8n and package versions, trigger type, checklist step and a redacted error. Distinguish a manual preview from an automatic poll and state whether its baseline was established. Do not post credentials, private records or unreviewed workflow exports.
+
+This maker-posted discussion is not an independent review or a claim of n8n verification. Use [GitHub issues](https://github.com/AppStructAI/n8n-nodes-appstruct/issues) for a reproducible package bug.
+
 ## Resources
 
 - [AppStruct n8n guide](https://appstruct.ai/integrations/n8n?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_resources)

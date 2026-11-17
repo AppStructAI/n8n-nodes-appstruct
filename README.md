@@ -6,6 +6,21 @@ Connect [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=gith
 
 This community package works with **App Builder projects and tables**. Docs, Sheets and Slides use separate [MCP integrations](https://appstruct.ai/integrations/mcp?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_mcp); their product API keys are not the credentials for this node.
 
+## Try the polling example before connecting an account
+
+[Open the interactive New Row / Updated Row timeline](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_20261115&utm_content=interactive_readme_01#polling-timeline). No installation, account or API key is needed for this browser example.
+
+At event 3, the same fictional source has one new request and one changed request:
+
+| Trigger | Expected output | Why |
+| --- | --- | --- |
+| New Row | `POLL-003` | Its ID was absent from the saved automatic baseline. |
+| Updated Row | `POLL-001` | Its existing ID has changed returned data. |
+
+Switch modes at that event, then inspect manual preview, failed reads, recovery, a failed destination and the record limit. Download the ten-event timeline as CSV to compare the expected outcomes.
+
+This is a fixed teaching model with fictional IDs. It does not execute n8n, connect to AppStruct or verify your actual workflow. To test your account, follow the manual first-read steps below, then use the [inactive polling workflow and acceptance log](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_20261115&utm_content=interactive_readme_setup_01#import-the-inactive-review-workflow).
+
 ## Version and compatibility
 
 Version **2.0.1** was published with GitHub Actions provenance and passed the full n8n registry scanner. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. Local candidate checks are documented in [TESTING.md](TESTING.md).

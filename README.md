@@ -92,6 +92,8 @@ For a service-request workflow, first define the form, stored fields and status 
 
 Then read a small set of fictional requests from the selected table in n8n. Before connecting notifications, decide which records qualify, what information to send and how repeated runs avoid duplicate messages. Test the destination and failure behavior separately before enabling a schedule.
 
+For a runnable next step, try the [service-request queue audit and CSV report](https://blog.appstruct.ai/blog/n8n-service-request-queue-audit?utm_source=github&utm_medium=referral&utm_campaign=queue_audit_20261120&utm_content=readme_queue_audit). Its downloadable workflow uses five core n8n nodes and six fictional requests to check duplicate IDs, missing owners and overdue dates. No AppStruct credential or community package is required for that included example; the walkthrough explains mapping an authorized AppStruct snapshot as an optional source. It runs manually and does not send messages or update records.
+
 The older [basic workflow](examples/basic-workflow.json) is a different example: it polls, creates log records and includes a placeholder Slack webhook. Configure and review those operations before running it; use the manual project-list starter for your first connection check.
 
 ## Troubleshooting

@@ -6,6 +6,14 @@ Connect [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=gith
 
 This community package works with **App Builder projects and tables**. Docs, Sheets and Slides use separate [MCP integrations](https://appstruct.ai/integrations/mcp?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_mcp); their product API keys are not the credentials for this node.
 
+## Approved by n8n; catalog release scheduled
+
+**Status checked November 20, 2026:** n8n has approved `n8n-nodes-appstruct` for its verified-node catalog. Creator Portal shows **Manual review: Complete** and **Launch Scheduled**. The approval notice says release is expected within the next 14 days, followed by a separate notification.
+
+The catalog rollout is pending. For installation today, follow the compatible self-hosted npm route below with the published **2.0.1** package. We will confirm the catalog and n8n Cloud installation path after release and an installation check.
+
+[Read the dated approval update and try the free polling example](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_verified_20261120&utm_content=approval_readme_01#appstructs-n8n-approval-status). The ten-event browser example needs no account; connecting your own AppStruct project requires the setup below.
+
 ## Try the polling example before connecting an account
 
 [Open the interactive New Row / Updated Row timeline](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_20261115&utm_content=interactive_readme_01#polling-timeline). No installation, account or API key is needed for this browser example.
@@ -48,7 +56,7 @@ For the full walkthrough and troubleshooting, see the [AppStruct n8n setup guide
 
 Package name: `n8n-nodes-appstruct`. The 2.x release uses the current official n8n build and validation tools and has no runtime npm dependencies.
 
-The npm installation path is for self-hosted n8n. n8n Cloud supports verified community nodes; this repository does not establish AppStruct as a verified Cloud node or promise availability there. Check the [current n8n community-node requirements](https://docs.n8n.io/integrations/community-nodes/installation/) before choosing a deployment.
+The npm installation path is for self-hosted n8n. The n8n approval described above is complete and the catalog launch is scheduled. Use the [current n8n community-node installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment; the catalog and Cloud path will be confirmed after the release notification.
 
 ## Supported operations
 
@@ -97,7 +105,7 @@ The older [basic workflow](examples/basic-workflow.json) is a different example:
 
 For questions about the New Row / Updated Row practice exercise, use the [AppStruct polling discussion on n8n Community](https://community.n8n.io/t/appstruct-community-node-test-new-row-and-updated-row-before-adding-a-destination/328923). Include your n8n and package versions, trigger type, checklist step and a redacted error. Distinguish a manual preview from an automatic poll and state whether its baseline was established. Do not post credentials, private records or unreviewed workflow exports.
 
-This maker-posted discussion is not an independent review or a claim of n8n verification. Use [GitHub issues](https://github.com/AppStructAI/n8n-nodes-appstruct/issues) for a reproducible package bug.
+The maker maintains this discussion to help reproduce the practice exercise. Catalog release status is documented above. Use [GitHub issues](https://github.com/AppStructAI/n8n-nodes-appstruct/issues) for a reproducible package bug.
 
 ## Resources
 

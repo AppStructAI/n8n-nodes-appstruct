@@ -16,6 +16,12 @@ The catalog rollout is pending. For installation today, follow the compatible se
 
 ## Try the polling example before connecting an account
 
+[Watch the 30-second illustrated guide](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_clip_20261121&utm_content=polling_clip_readme_01#n8n-polling-video). English captions, a transcript and an MP4 download are included.
+
+<a href="https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=n8n_polling_clip_20261121&amp;utm_content=polling_clip_readme_01#n8n-polling-video"><img src="https://blog.appstruct.ai/static/images/blog/appstruct-n8n-polling-poster.png" width="360" alt="Illustrated polling guide: first automatic baseline, different record IDs after an edit and addition, and no output for an unchanged repeat." /></a>
+
+The clip models version 2.0.1 with fictional records. It does not run a live n8n workflow or test your credentials. Use the interactive timeline below to inspect the expected outputs, then test your own account with the manual first-read workflow.
+
 [Open the interactive New Row / Updated Row timeline](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_polling_20261115&utm_content=interactive_readme_01#polling-timeline). No installation, account or API key is needed for this browser example.
 
 At event 3, the same fictional source has one new request and one changed request:

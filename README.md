@@ -45,6 +45,8 @@ For self-hosted installations, 2.x requires **n8n 2.47.7 or newer with Node.js 2
 
 Use [the manual first-read workflow](https://appstruct.ai/downloads/appstruct-n8n-list-projects.json) to check the connection before configuring writes or a scheduled automation.
 
+Prefer one download? Get the [Cloud first-read kit (ZIP, 6.3 KiB)](https://github.com/AppStructAI/n8n-nodes-appstruct/releases/download/v2.0.1/appstruct-n8n-cloud-first-read-kit-20261126.zip): Cloud and self-hosted setup notes, the manual project-list workflow, an inactive polling exercise and a 13-case acceptance log. Instructions were updated November 26; this is a documentation revision for node 2.0.1, not a new npm release. [Inspect the kit instructions](starter-kit/README.md) or reproduce the archive with `python3 scripts/build-first-read-kit.py`.
+
 ```text
 Manual trigger → AppStruct: Project / Get Many → inspect IDs and project names
 ```

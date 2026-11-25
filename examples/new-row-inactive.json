@@ -1,0 +1,50 @@
+{
+  "name": "AppStruct New Row — inactive practice review",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "newRow",
+        "projectId": "",
+        "tableName": "",
+        "pollLimit": 1000
+      },
+      "id": "6e38e154-c9b7-4d99-bbcb-a70d1713d2ac",
+      "name": "AppStruct New Row — select practice table",
+      "type": "n8n-nodes-appstruct.appStructTrigger",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Practice setup required\nOn n8n Cloud, the instance owner/admin installs the verified AppStruct node from the canvas node panel. For self-hosted n8n, node 2.x requires n8n 2.47.7+ / Node.js 24+. Check the installed version; this exercise describes AppStruct 2.0.1. Select your own credential, practice project and small table. This workflow is inactive and has no destination.\n\nManual preview returns current rows. First successful automatic poll creates a baseline without change output. Add a fictional row only after that baseline, then inspect the next poll and an unchanged repeat.\n\nSetup: https://appstruct.ai/integrations/n8n#n8n-cloud\nGuide: https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct\nThe account credential is not read-only. Keep execution output private.",
+        "height": 580,
+        "width": 440
+      },
+      "id": "a753dafb-4cc8-4eed-86f5-cb4d663ef920",
+      "name": "Read before running",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        160
+      ]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

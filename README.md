@@ -6,13 +6,13 @@ Connect [AppStruct App Builder](https://appstruct.ai/app-builder?utm_source=gith
 
 This community package works with **App Builder projects and tables**. Docs, Sheets and Slides use separate [MCP integrations](https://appstruct.ai/integrations/mcp?utm_source=github&utm_medium=referral&utm_campaign=n8n_quickstart_20261113&utm_content=readme_mcp); their product API keys are not the credentials for this node.
 
-## Approved by n8n; catalog release scheduled
+<a id="approved-by-n8n-catalog-release-scheduled"></a>
 
-**Status checked November 20, 2026:** n8n has approved `n8n-nodes-appstruct` for its verified-node catalog. Creator Portal shows **Manual review: Complete** and **Launch Scheduled**. The approval notice says release is expected within the next 14 days, followed by a separate notification.
+## Available on n8n Cloud
 
-The catalog rollout is pending. For installation today, follow the compatible self-hosted npm route below with the published **2.0.1** package. We will confirm the catalog and n8n Cloud installation path after release and an installation check.
+**Updated November 25, 2026:** n8n's release notice, received on **November 23**, confirms that `n8n-nodes-appstruct` is **verified and live on n8n Cloud**. This follows approval on November 20. Search for **AppStruct** in the workflow editor's node panel to inspect the verified community result. A public page on n8n's website is a separate listing; its publication has not been confirmed.
 
-[Read the dated approval update and try the free polling example](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_verified_20261120&utm_content=approval_readme_01#appstructs-n8n-approval-status). The ten-event browser example needs no account; connecting your own AppStruct project requires the setup below.
+[Follow the Cloud installation and first-read walkthrough](https://blog.appstruct.ai/blog/n8n-polling-triggers-appstruct?utm_source=github&utm_medium=referral&utm_campaign=n8n_cloud_20261125&utm_content=cloud_first_read_readme_01#install-on-n8n-cloud), then compare a returned project ID and name with your AppStruct Apps library. The Cloud steps follow n8n's documentation and release notice; they have not been independently executed in an AppStruct-owned Cloud instance. The free ten-event browser example remains available without an account.
 
 ## Try the polling example before connecting an account
 
@@ -39,7 +39,7 @@ This is a fixed teaching model with fictional IDs. It does not execute n8n, conn
 
 Version **2.0.1** was published with GitHub Actions provenance and passed the full n8n registry scanner. Check the [npm versions](https://www.npmjs.com/package/n8n-nodes-appstruct?activeTab=versions) before installing: a merged GitHub change does not update the published npm package. Local candidate checks are documented in [TESTING.md](TESTING.md).
 
-2.x requires **n8n 2.47.7 or newer with Node.js 24+**. It is tested with n8n 2.47.7 and n8n-workflow 2.16.0. Older n8n hosts are not supported by this release. The package keeps its existing node type IDs, version-1 workflow definitions and `appStructApi` email/password credential fields.
+For self-hosted installations, 2.x requires **n8n 2.47.7 or newer with Node.js 24+**. It is tested with n8n 2.47.7 and n8n-workflow 2.16.0. Older self-hosted n8n versions are not supported by this release. Cloud users install the verified node through the editor; n8n manages the hosted runtime. Check your installed package version before comparing behavior. The package keeps its existing node type IDs, version-1 workflow definitions and `appStructApi` email/password credential fields.
 
 ## Start here: list your projects
 
@@ -49,7 +49,7 @@ Use [the manual first-read workflow](https://appstruct.ai/downloads/appstruct-n8
 Manual trigger → AppStruct: Project / Get Many → inspect IDs and project names
 ```
 
-1. Install a published `n8n-nodes-appstruct@2` release on a compatible self-hosted n8n instance that allows community packages. Follow [n8n's installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment.
+1. On **n8n Cloud**, have the instance owner or admin install the verified AppStruct node from the canvas node panel. On **self-hosted n8n**, install a published `n8n-nodes-appstruct@2` release on a compatible instance that allows community packages. See the installation options below.
 2. Download `examples/list-projects-read-only.json`, then import it using the n8n editor's **Import from File** option. See [n8n's import/export guide](https://docs.n8n.io/workflows/export-import/).
 3. Open the **List AppStruct projects** node and select an **AppStruct API** credential. The package uses your AppStruct account email and password, stored in n8n credentials, to obtain an access token. n8n manages the token through `preAuthentication`; the login uses AppStruct’s explicit JSON-client protocol and does not use browser cookies.
 4. Execute the manual workflow. Compare the returned `id` and `projectName` values with your AppStruct Apps library. An empty library can produce an empty result; create a separate practice project and repeat the check if needed.
@@ -62,7 +62,19 @@ For the full walkthrough and troubleshooting, see the [AppStruct n8n setup guide
 
 Package name: `n8n-nodes-appstruct`. The 2.x release uses the current official n8n build and validation tools and has no runtime npm dependencies.
 
-The npm installation path is for self-hosted n8n. The n8n approval described above is complete and the catalog launch is scheduled. Use the [current n8n community-node installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) for your deployment; the catalog and Cloud path will be confirmed after the release notification.
+### n8n Cloud
+
+Follow n8n's [verified community-node installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/verified-install/):
+
+1. As the instance owner or an admin, open a workflow canvas and select **+**.
+2. Search for **AppStruct** and inspect the matching result in **More from the community**. Confirm the package name is `n8n-nodes-appstruct`.
+3. Open the result, select **Install**, and add the node to the workflow. Run the manual **Project / Get Many** connection check before configuring a trigger or a write.
+
+If the result is missing, the owner or admin should check **Verified community nodes** in the Cloud instance settings. The release notice also mentions that a restart may be needed; coordinate with the owner before interrupting running workflows. Use your own n8n Cloud account and applicable plan, plus an AppStruct account with access to the intended projects.
+
+### Self-hosted n8n
+
+Use the [community-node installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/) and the compatibility requirements above. The npm installation route is for self-hosted instances.
 
 ## Supported operations
 

@@ -1,0 +1,333 @@
+{
+  "name": "Review AppStruct service requests and email an exception summary",
+  "nodes": [
+    {
+      "name": "Run a manual review",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        0,
+        320
+      ],
+      "id": "manual"
+    },
+    {
+      "name": "Daily review - enable after testing",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        520
+      ],
+      "id": "schedule",
+      "disabled": true
+    },
+    {
+      "name": "Configure review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"projectId\": \"\",\n  \"tableName\": \"\",\n  \"limit\": 2000,\n  \"timezone\": \"UTC\",\n  \"referenceDateOverride\": \"\",\n  \"fields\": {\n    \"id\": \"id\",\n    \"request\": \"request\",\n    \"status\": \"status\",\n    \"owner\": \"owner\",\n    \"dueDate\": \"dueDate\"\n  },\n  \"notify\": false,\n  \"fromEmail\": \"\",\n  \"toEmail\": \"\"\n}",
+        "options": {}
+      },
+      "position": [
+        240,
+        320
+      ],
+      "id": "configure"
+    },
+    {
+      "name": "Validate configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function queueDigestConfig(input, nowIso) {\n  const config = { ...input }\n  if (!/^\\d+$/.test(String(config.projectId)) || Number(config.projectId) < 1)\n    throw new Error('Select your AppStruct projectId before running the live review.')\n  if (typeof config.tableName !== 'string' || !config.tableName.trim())\n    throw new Error('Select your AppStruct tableName before running the live review.')\n  if (!Number.isInteger(config.limit) || config.limit < 2 || config.limit > 2000)\n    throw new Error('Use a row limit between 2 and 2000; a result at the limit stops the review.')\n  for (const field of ['id', 'request', 'status', 'owner', 'dueDate'])\n    if (typeof config.fields?.[field] !== 'string' || !config.fields[field].trim())\n      throw new Error(`Map fields.${field} to the corresponding source column.`)\n  if (typeof config.notify !== 'boolean') throw new Error('notify must be true or false.')\n  if (config.notify)\n    for (const field of ['fromEmail', 'toEmail'])\n      if (!/^[^\\s@,;<>]+@[^\\s@,;<>]+\\.[^\\s@,;<>]+$/.test(config[field] || ''))\n        throw new Error(`Set one valid ${field} address before enabling notifications.`)\n  if (typeof config.timezone !== 'string' || !config.timezone.trim())\n    throw new Error('Set an explicit IANA timezone, for example UTC or Europe/London.')\n  const date = new Date(nowIso)\n  if (!Number.isFinite(date.getTime())) throw new Error('A valid execution time is required.')\n  const parts = Object.fromEntries(\n    new Intl.DateTimeFormat('en-US', {\n      timeZone: config.timezone,\n      year: 'numeric',\n      month: '2-digit',\n      day: '2-digit',\n    })\n      .formatToParts(date)\n      .map(({ type, value }) => [type, value])\n  )\n  config.referenceDate = config.referenceDateOverride || `${parts.year}-${parts.month}-${parts.day}`\n  const parsed = new Date(`${config.referenceDate}T00:00:00.000Z`)\n  if (\n    !/^\\d{4}-\\d{2}-\\d{2}$/.test(config.referenceDate) ||\n    !Number.isFinite(parsed.getTime()) ||\n    parsed.toISOString().slice(0, 10) !== config.referenceDate\n  )\n    throw new Error('referenceDateOverride must be empty or a real YYYY-MM-DD date.')\n  return config\n}\nreturn [{ json: queueDigestConfig($input.first().json, $now.toISO()) }];"
+      },
+      "position": [
+        480,
+        320
+      ],
+      "id": "validate"
+    },
+    {
+      "name": "Read AppStruct requests",
+      "type": "n8n-nodes-appstruct.appStruct",
+      "typeVersion": 1,
+      "parameters": {
+        "resource": "record",
+        "operation": "getMany",
+        "projectId": "={{ $('Validate configuration').first().json.projectId }}",
+        "tableName": "={{ $('Validate configuration').first().json.tableName }}",
+        "limit": "={{ $('Validate configuration').first().json.limit }}"
+      },
+      "position": [
+        720,
+        320
+      ],
+      "id": "read",
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Map and audit every supplied row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function queueDigestSnapshot(input, config) {\n  if (\n    !Array.isArray(input) ||\n    input.some((row) => !row || typeof row !== 'object' || Array.isArray(row))\n  )\n    throw new Error('Expected one object per AppStruct record.')\n  const records = input.length === 1 && Object.keys(input[0]).length === 0 ? [] : input\n  if (records.length >= config.limit)\n    throw new Error(\n      'The read reached the configured row limit. Check source completeness before reporting.'\n    )\n  for (const field of ['request', 'status'])\n    if (records.length && !records.some((row) => Object.hasOwn(row, config.fields[field])))\n      throw new Error(`No record contains the mapped ${field} column. Check field names.`)\n  return {\n    referenceDate: config.referenceDate,\n    rows: records.map((row) =>\n      Object.fromEntries(\n        Object.entries(config.fields).map(([field, column]) => [\n          field,\n          Object.hasOwn(row, column) ? row[column] : null,\n        ])\n      )\n    ),\n  }\n}\nfunction auditServiceRequests(snapshot) {\n  function isObject(value) {\n    return value !== null && typeof value === 'object' && !Array.isArray(value)\n  }\n  function isDate(value) {\n    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false\n    const parsed = new Date(`${value}T00:00:00.000Z`)\n    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value\n  }\n  function text(value) {\n    return typeof value === 'string' ? value.trim() : ''\n  }\n  if (!isObject(snapshot)) throw new Error('Expected one object with referenceDate and rows.')\n  if (!isDate(snapshot.referenceDate))\n    throw new Error('referenceDate must be a real YYYY-MM-DD date.')\n  if (!Array.isArray(snapshot.rows))\n    throw new Error('rows must be an array, including [] for an empty queue.')\n  if (snapshot.rows.length > 2000)\n    throw new Error('Review at most 2000 rows per snapshot; check source completeness separately.')\n  const records = snapshot.rows.map((row, index) => {\n    if (!isObject(row)) throw new Error(`rows[${index}] must be an object.`)\n    const flags = []\n    let id = ''\n    if (typeof row.id === 'string') id = row.id.trim()\n    else if (Number.isSafeInteger(row.id)) id = String(row.id)\n    else if (row.id !== null && row.id !== undefined) flags.push('invalid_id')\n    if (!id && !flags.includes('invalid_id')) flags.push('missing_id')\n    const request = text(row.request)\n    const status = text(row.status)\n    const owner = text(row.owner)\n    const dueDate = text(row.dueDate)\n    if (!request) flags.push('missing_request')\n    const active = status === 'new' || status === 'in_progress'\n    if (!active && status !== 'done') flags.push('unknown_status')\n    if (active && !owner) flags.push('unassigned')\n    const hasDueDate = row.dueDate !== null && row.dueDate !== undefined && row.dueDate !== ''\n    const validDueDate = isDate(dueDate)\n    if (hasDueDate && !validDueDate) flags.push('invalid_due_date')\n    const overdue = active && validDueDate && dueDate < snapshot.referenceDate\n    if (overdue) flags.push('overdue')\n    return { sourceRow: index + 1, id, request, status, owner, dueDate, overdue, flags }\n  })\n  const counts = new Map()\n  for (const record of records)\n    if (record.id) counts.set(record.id, (counts.get(record.id) || 0) + 1)\n  const dataFlags = new Set([\n    'missing_id',\n    'invalid_id',\n    'duplicate_id',\n    'missing_request',\n    'unknown_status',\n    'invalid_due_date',\n  ])\n  for (const record of records) {\n    if (record.id && counts.get(record.id) > 1) record.flags.push('duplicate_id')\n    record.needsReview = record.flags.length > 0\n    record.recommendation = record.flags.some((flag) => dataFlags.has(flag))\n      ? 'Hold: correct data before automation'\n      : record.flags.includes('unassigned')\n        ? record.overdue\n          ? 'Assign owner and review overdue request'\n          : 'Assign an owner'\n        : record.overdue\n          ? 'Review overdue request'\n          : record.status === 'done'\n            ? 'Closed: no next action'\n            : 'Ready for the next step'\n  }\n  return {\n    referenceDate: snapshot.referenceDate,\n    summary: {\n      totalRows: records.length,\n      cleanRows: records.filter((row) => !row.needsReview).length,\n      reviewRows: records.filter((row) => row.needsReview).length,\n      overdueRows: records.filter((row) => row.overdue).length,\n      unassignedRows: records.filter((row) => row.flags.includes('unassigned')).length,\n      duplicateIdRows: records.filter((row) => row.flags.includes('duplicate_id')).length,\n      duplicateIds: [...counts.values()].filter((count) => count > 1).length,\n    },\n    records,\n  }\n}\nfunction queueDigestMessage(audit, config) {\n  const s = audit.summary\n  return {\n    sendEmail: config.notify && s.reviewRows > 0,\n    fromEmail: config.fromEmail,\n    toEmail: config.toEmail,\n    subject: `AppStruct queue review: ${s.reviewRows} of ${s.totalRows} rows need attention`,\n    text: [\n      `Queue review for ${audit.referenceDate} (${config.timezone}).`,\n      `Rows reviewed: ${s.totalRows}`,\n      `Rows needing review: ${s.reviewRows}`,\n      `Overdue active rows: ${s.overdueRows}`,\n      `Unassigned active rows: ${s.unassignedRows}`,\n      `Rows sharing an ID: ${s.duplicateIdRows}`,\n      '',\n      'Open the n8n execution to inspect flags and download the CSV report.',\n      'This summary includes counts only. No request text, names or CSV attachment is emailed.',\n      'No source records were changed. Repeated runs can send repeated summaries; this workflow does not deduplicate notifications.',\n    ].join('\\n'),\n  }\n}\nconst config = $('Validate configuration').first().json;\nconst snapshot = queueDigestSnapshot($input.all().map(item => item.json), config);\nconst audit = auditServiceRequests(snapshot);\nreturn [{ json: { ...audit, ...queueDigestMessage(audit, config) } }];"
+      },
+      "position": [
+        960,
+        320
+      ],
+      "id": "audit"
+    },
+    {
+      "name": "Build CSV review rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function serviceRequestCsvRows(audit) {\n  // A report, not a source-data round trip. Raw values remain in the audit node.\n  function cell(value) {\n    if (typeof value !== 'string') return value\n    return /^[\\s\\uFEFF]*[=+@-]/.test(value) || /^[\\t\\r\\n]/.test(value) ? `'${value}` : value\n  }\n  const common = {\n    row_type: 'summary',\n    reference_date: audit.referenceDate,\n    source_row: '',\n    id: '',\n    request: '',\n    status: '',\n    owner: '',\n    due_date: '',\n    overdue: '',\n    needs_review: '',\n    flags: '',\n    recommendation: '',\n    total_rows: audit.summary.totalRows,\n    clean_rows: audit.summary.cleanRows,\n    review_rows: audit.summary.reviewRows,\n    overdue_rows: audit.summary.overdueRows,\n    unassigned_rows: audit.summary.unassignedRows,\n    duplicate_id_rows: audit.summary.duplicateIdRows,\n    duplicate_ids: audit.summary.duplicateIds,\n  }\n  return [\n    common,\n    ...audit.records.map((row) => ({\n      ...common,\n      row_type: 'request',\n      source_row: row.sourceRow,\n      id: cell(row.id),\n      request: cell(row.request),\n      status: cell(row.status),\n      owner: cell(row.owner),\n      due_date: cell(row.dueDate),\n      overdue: row.overdue,\n      needs_review: row.needsReview,\n      flags: row.flags.join('; '),\n      recommendation: row.recommendation,\n      total_rows: '',\n      clean_rows: '',\n      review_rows: '',\n      overdue_rows: '',\n      unassigned_rows: '',\n      duplicate_id_rows: '',\n      duplicate_ids: '',\n    })),\n  ]\n}\nreturn serviceRequestCsvRows($input.first().json).map(json => ({ json }));"
+      },
+      "position": [
+        1200,
+        220
+      ],
+      "id": "csv-rows"
+    },
+    {
+      "name": "Download review CSV",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.2,
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "delimiter": ",",
+          "headerRow": true,
+          "fileName": "appstruct-queue-review.csv"
+        }
+      },
+      "position": [
+        1440,
+        220
+      ],
+      "id": "csv-file"
+    },
+    {
+      "name": "Send enabled and issues found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "send-condition",
+              "leftValue": "={{ $json.sendEmail }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "position": [
+        1200,
+        480
+      ],
+      "id": "notify"
+    },
+    {
+      "name": "Email counts-only summary",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "parameters": {
+        "fromEmail": "={{ $json.fromEmail }}",
+        "toEmail": "={{ $json.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {}
+      },
+      "position": [
+        1440,
+        440
+      ],
+      "id": "email"
+    },
+    {
+      "name": "Setup and first run",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Review an AppStruct request queue\nRead a table, map its columns, check IDs, status, owners and calendar due dates, download a CSV, and optionally email a counts-only exception summary. No source records are changed.\n\n### Setup\n1. Install the verified AppStruct node (n8n-nodes-appstruct 2.0.1). On self-hosted n8n use 2.47.7+ and Node.js 24+. Select your AppStruct and SMTP credentials in their nodes; no credentials or account IDs are included. If email is unnecessary, remove the If and Email branch.\n2. In Configure review, set projectId, tableName and the five exact returned field names. Status values must be new, in_progress or done. Use an authorized practice table first.\n3. Set timezone (default UTC). An empty referenceDateOverride uses the execution date in that zone. Due dates must be YYYY-MM-DD, not timestamps.\n4. Run manually with notify=false. Inspect the audit and CSV, including the source-row count.\n5. To receive exception summaries, set your authorized fromEmail/toEmail and notify=true. Email sends counts only, no names, text or CSV. It sends nothing for a clean or empty queue.\n\n[Setup, sample data and expected results](https://blog.appstruct.ai/blog/n8n-service-request-queue-audit?utm_source=n8n_template&utm_medium=referral&utm_campaign=queue_audit_20261120&utm_content=live_digest_overview#connect-an-appstruct-table-and-prepare-an-exception-summary)",
+        "color": 1,
+        "width": 620,
+        "height": 860
+      },
+      "position": [
+        -700,
+        -80
+      ],
+      "id": "setup-note"
+    },
+    {
+      "name": "Source and completeness",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Read before reporting\nUse a small table (fewer than 2000 records by default). AppStruct Get Many fetches the table and applies Limit locally; it does not paginate the source. A result reaching Limit stops the review so a truncated queue is not reported as complete. Empty output is supported via Always Output Data. Errors stop execution; they are not treated as an empty queue. Compare with your source count. Missing mapped request/status columns stop the review. Duplicate IDs stay separate.",
+        "color": 7,
+        "width": 740,
+        "height": 250
+      },
+      "position": [
+        200,
+        -30
+      ],
+      "id": "read-note"
+    },
+    {
+      "name": "Review before scheduling",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## CSV and optional notification\nCSV contains a summary plus every supplied row, with formula-like text prefixed by an apostrophe. The email branch sends counts only when notify=true and reviewRows>0. SMTP is user-configured.\n\nAfter a successful manual read and an authorized test email, set the workflow timezone to match Configure review, enable the weekday 09:00 schedule, save and publish. The download is inactive and its schedule is disabled. Repeated runs may send the same summary; delivery is not exactly-once. Review execution retention for private data. No customer messages or source updates are performed.",
+        "color": 7,
+        "width": 560,
+        "height": 340
+      },
+      "position": [
+        1140,
+        -150
+      ],
+      "id": "output-note"
+    }
+  ],
+  "connections": {
+    "Run a manual review": {
+      "main": [
+        [
+          {
+            "node": "Configure review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily review - enable after testing": {
+      "main": [
+        [
+          {
+            "node": "Configure review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure review": {
+      "main": [
+        [
+          {
+            "node": "Validate configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate configuration": {
+      "main": [
+        [
+          {
+            "node": "Read AppStruct requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read AppStruct requests": {
+      "main": [
+        [
+          {
+            "node": "Map and audit every supplied row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map and audit every supplied row": {
+      "main": [
+        [
+          {
+            "node": "Build CSV review rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send enabled and issues found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build CSV review rows": {
+      "main": [
+        [
+          {
+            "node": "Download review CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send enabled and issues found?": {
+      "main": [
+        [
+          {
+            "node": "Email counts-only summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "pinData": {},
+  "tags": []
+}
